@@ -11,5 +11,9 @@ The API used for the AppleSeedCollective.
 ## Installation
 1. Clone files
 2. Run `npm install`
-3. Run `bin/www`
+
+## Execution
+
+- Run `bin/www` for development mode
+- Run `NODE_ENV=production bin/www` for production mode
 
