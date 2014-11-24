@@ -14,6 +14,11 @@ The API used for the AppleSeedCollective.
 
 ## Execution
 
-- Run `bin/www` for development mode
-- Run `NODE_ENV=production bin/www` for production mode
+Development Mode:
+
+		$ bin/www
+
+Production Mode:
+
+		$ NODE_ENV=production bin/www
 
