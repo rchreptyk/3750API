@@ -1,11 +1,15 @@
 var express = require('express');
 var router = express.Router();
-var User = require('../db/User');
+var User = require('../db/user');
+var Location = require('../db/location');
 var _ = require('underscore');
+var objectID = require('../db/db').Types.ObjectId;
+var Q = require('q');
 
 function getPublicUser(user) {
 	
 	var allowedEntries = [
+		'id', 
 		'firstname', 
 		'lastname', 
 		'email',
@@ -19,10 +23,27 @@ function getPublicUser(user) {
 		'emailVerified'
 	];
 
-	var publicUser = _.pick(user, allowedEntries);
-	publicUser.id = user._id;
+	var allowedLocationEntries = [
+		"id",
+		"description",
+		"address1",
+		"address2",
+		"city",
+		"postal",
+		"country",
+		"longitude",
+		"latitude"
+	];
 
-	// TODO LOCATIONS
+	user.id = user._id;
+	var publicUser = _.pick(user, allowedEntries);
+	
+	publicUser.locations = _.map(publicUser.locations, function(location) {
+		location.id = location._id;
+		location = _.pick(location, allowedLocationEntries);
+
+		return location;
+	});
 
 	return publicUser;
 }
@@ -32,6 +53,39 @@ function getErrorObj(err) {
 		message: err.message,
 		errors: _.pluck(err.errors, 'message')
 	}
+}
+
+function saveLocation(user, locationData) {
+	var deferred = Q.defer();
+
+	location = new Location();
+	location.description = locationData.description;
+	location.address1 = locationData.address1;
+	location.address2 = locationData.address2;
+	location.city = locationData.city;
+	location.postal = locationData.postal;
+	location.country = locationData.country;
+	location.latitude = locationData.latitude;
+	location.longitude = locationData.longitude;
+
+	console.log("Saving...");
+
+	location.save(function(err, product) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			failed = true;
+			console.log("Failed...");
+			deferred.reject(new Error(error));
+			return;
+		}
+
+		user.locations.push(product._id);
+		deferred.resolve(product);
+	});
+
+	return deferred.promise;
 }
 
 /* POST new user */
@@ -56,17 +110,43 @@ router.post('/', function(req, res) {
 	user.emailEnabled = userData.emailEnabled;
 	user.emailVerified = userData.emailVerified;
 
-	// TODO LOCATIONS
+	var locationSaves = [];
 
-	user.save(function (err, product) {
-		if(err)
-		{
-			res.status(400).send(getErrorObj(err));
-			return;
-		}
+	if(userData.locations)
+	{
+		userData.locations.forEach(function(locationData) {
+			console.log("Starting save");
+			console.log(locationData);
+			locationSaves.push(saveLocation(user, locationData));
+		});
+	}
 
-		res.status(201).send({
-			users: [getPublicUser(product)] 
+	
+	console.log("Waiting");
+	Q.all(locationSaves).then(function(locations) {
+
+		
+
+		user.save(function (err, product) {
+			if(err)
+			{
+				console.log(err);
+				res.status(400).send(getErrorObj(err));
+				return;
+			}
+
+			User.populate(product, { path: 'locations' }, function(err, populatedUser) {
+
+				if(err)
+				{
+					res.status(400).send(getErrorObj(err));
+					return;
+				}
+
+				res.status(201).send({
+					users: [getPublicUser(product)] 
+				});
+			});
 		});
 	});
 });
@@ -79,6 +159,7 @@ router.get('/', function(req, res) {
 	User.find({ }, null, { skip: offset, limit: limit }, function (err, users) {
 		if(err)
 		{
+			console.log(err);
 			res.status(400).send(getErrorObj(err));
 			return;
 		}
@@ -93,37 +174,14 @@ router.get('/', function(req, res) {
 	});
 });
 
-/* GET users listing. */
-router.get('/:id', function(req, res) {
-	var id = req.params['id'];
-
-	User.findById(id, function (err, user) {
-		if(err)
-		{
-			res.status(400).send(getErrorObj(err));
-			return;
-		}
-
-		if(user)
-		{
-			res.send({
-				users: [getPublicUser(user)]
-			});
-		}
-		else
-		{
-			res.status(404).send({
-				message: "Could not find user with the given id"
-			});
-		}
-	});
-});
-
 /* GET a user. */
 router.get('/:id', function(req, res) {
 	var id = req.params['id'];
 
-	User.findById(id, function (err, user) {
+	User.findById(id).populate('locations').exec(function (err, user) {
+		
+		console.log(user);
+
 		if(err)
 		{
 			res.status(400).send(getErrorObj(err));
@@ -191,9 +249,19 @@ router.put('/:id', function(req, res){
 				return;
 			}
 
-			res.send({
-				users: [getPublicUser(resultUser)]
+			User.populate(resultUser, { path: 'locations' }, function(err, populatedUser) {
+
+				if(err)
+				{
+					res.status(400).send(getErrorObj(err));
+					return;
+				}
+
+				res.send({
+					users: [getPublicUser(populatedUser)]
+				});
 			});
+
 		});
 
 	});

@@ -1,6 +1,8 @@
 var settings = require('../db/settings');
 var db = require('../db/db');
 
+var Location = require('../db/location')
+
 var Schema = db.Schema;
 
 var userSchema = new Schema({
@@ -11,7 +13,7 @@ var userSchema = new Schema({
 	roles: {type: [String], default: ["Normal"] },
 	passwordHash: String,
 	phone: Number,
-	locations: { type: [Schema.Types.ObjectId], default: [], ref: "Location" },
+	locations: [ { type: Number, ref: 'Location' }],
 	userNotes: { type: String, default: ""},
 	company: {type: String, default: ""},
 	emailEnabled: {type: Boolean, default: false},
