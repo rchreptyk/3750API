@@ -9,6 +9,7 @@ var userSchema = new Schema({
 	lastname: {type: String, required: true},
 	email: {type: String, required: true },
 	roles: {type: [String], default: ["Normal"] },
+	passwordHash: String,
 	phone: Number,
 	locations: { type: [Schema.Types.ObjectId], default: [], ref: "Location" },
 	userNotes: { type: String, default: ""},
@@ -29,6 +30,9 @@ userSchema.path('roles').validate(function(value) {
 	return valid;
 }, 'Invalid role, must be either normal or staff');
 
+userSchema.path('email').validate(function(value) {
+	return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(value);
+}, 'Invalid email address');
 
 /* We are going to override the _id, so that our ID can be a numeric value is instead of a hash */
 userSchema.pre('save', function(next) {
