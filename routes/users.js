@@ -4,19 +4,23 @@ var User = require('../db/User');
 var _ = require('underscore');
 
 function getPublicUser(user) {
-	publicUser = {
-		id: user._id,
-		firstname: user.firstname,
-		email: user.email,
-		roles: user.roles,
-		phone: user.phone,
-		locations: user.locations,
-		userNotes: user.userNotes,
-		company: user.company,
-		created: user.created,
-		emailEnabled: user.emailEnabled,
-		emailVerified: user.emailVerified,
-	};
+	
+	var allowedEntries = [
+		'firstname', 
+		'lastname', 
+		'email',
+		'roles',
+		'phone',
+		'locations',
+		'userNotes',
+		'company',
+		'created',
+		'emailEnabled',
+		'emailVerified'
+	];
+
+	var publicUser = _.pick(user, allowedEntries);
+	publicUser.id = user._id;
 
 	// TODO LOCATIONS
 
@@ -89,6 +93,111 @@ router.get('/', function(req, res) {
 	});
 });
 
+/* GET users listing. */
+router.get('/:id', function(req, res) {
+	var id = req.params['id'];
+
+	User.findById(id, function (err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(user)
+		{
+			res.send({
+				users: [getPublicUser(user)]
+			});
+		}
+		else
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+		}
+	});
+});
+
+/* GET a user. */
+router.get('/:id', function(req, res) {
+	var id = req.params['id'];
+
+	User.findById(id, function (err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(user)
+		{
+			res.send({
+				users: [getPublicUser(user)]
+			});
+		}
+		else
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+		}
+	});
+});
+
+router.put('/:id', function(req, res){
+	var id = req.params['id'];
+
+	var updateable = [
+		'firstname', 
+		'lastname',
+		'phone',
+		'roles',
+		'userNotes',
+		'company',
+		'emailEnabled',
+		'emailVerified'
+	];
+
+	if(!req.body.user)
+	{
+		req.status(400).send({ message: "No user information given "});
+	}
+
+	var fields = _.pick(req.body.user, updateable);
+
+	User.findById(id, function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		_.extend(user, fields);
+
+		user.save(function( err, resultUser, numberAffected) {
+
+			if(err)
+			{
+				res.status(400).send(getErrorObj(err));
+				return;
+			}
+
+			res.send({
+				users: [getPublicUser(resultUser)]
+			});
+		});
+
+	});
+});
 
 
 module.exports = router;

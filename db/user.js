@@ -38,6 +38,12 @@ userSchema.path('email').validate(function(value) {
 userSchema.pre('save', function(next) {
 	var user = this;
 
+	if(!this.isNew)
+	{
+		next();
+		return;
+	}
+
 	settings.Settings.findByIdAndUpdate( settings.SettingsKey, { $inc: { nextSeqNumber: 1 } }, function(err, settingObj) {
 		if(err) next(err);
 
