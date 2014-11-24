@@ -199,5 +199,38 @@ router.put('/:id', function(req, res){
 	});
 });
 
+router.delete('/:id', function(req, res) {
+	var id = req.params['id'];
+
+	User.findById(id, function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		user.remove(function(err) {
+
+			if(err)
+			{
+				res.status(500).send(getErrorObj(err));
+			}
+			else
+			{
+				res.send({
+					message: "User deleted"
+				});
+			}
+		});
+	});
+});
 
 module.exports = router;
