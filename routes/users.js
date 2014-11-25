@@ -74,16 +74,10 @@ function saveLocation(user, locationData) {
 	location.latitude = locationData.latitude;
 	location.longitude = locationData.longitude;
 
-	console.log("Saving...");
-
 	location.save(function(err, product) {
 		if(err)
 		{
-			console.log(err);
-			res.status(400).send(getErrorObj(err));
-			failed = true;
-			console.log("Failed...");
-			deferred.reject(new Error(error));
+			deferred.reject(new Error(err ));
 			return;
 		}
 
@@ -121,18 +115,11 @@ router.post('/', function(req, res) {
 	if(userData.locations)
 	{
 		userData.locations.forEach(function(locationData) {
-			console.log("Starting save");
-			console.log(locationData);
 			locationSaves.push(saveLocation(user, locationData));
 		});
 	}
 
-	
-	console.log("Waiting");
 	Q.all(locationSaves).then(function(locations) {
-
-		
-
 		user.save(function (err, product) {
 			if(err)
 			{
@@ -154,6 +141,8 @@ router.post('/', function(req, res) {
 				});
 			});
 		});
+	}).catch(function (err) {
+		res.status(400).send(getErrorObj(err));
 	});
 });
 
@@ -185,8 +174,6 @@ router.get('/:id', function(req, res) {
 	var id = req.params['id'];
 
 	User.findById(id).populate('locations').exec(function (err, user) {
-		
-		console.log(user);
 
 		if(err)
 		{
@@ -320,6 +307,59 @@ router.get('/:userid/locations', function (req, res) {
 		res.send({
 			locations: getPublicLocations(user.locations)
 		});
+
+	});
+
+});
+
+router.post('/:userid/locations', function (req, res) {
+
+	var userid = req.params['userid'];
+
+	if(!req.body.location)
+	{
+		res.status(400).send({
+			message: "No location was sent"
+		});
+		return;
+	}
+
+	User.findById(userid).populate('locations').exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		locSave = saveLocation(user, req.body.location);
+
+		locSave.then(function (location) {
+			user.save(function( err, resultUser, numberAffected) {
+
+				if(err)
+				{
+					res.status(400).send(getErrorObj(err));
+					return;
+				}
+
+				res.status(201).send({
+					locations: getPublicLocations([location])
+				});
+
+			});
+
+		}).catch(function (err) {
+			res.status(400).send(getErrorObj(err));
+		});
+		
 
 	});
 
