@@ -139,6 +139,9 @@ router.get('/', function(req, res) {
 });
 
 router.get('/current', function(req, res) {
+
+	console.log(req.user);
+
 	User.populate(req.user, 'locations', function(err, populated) {
 		if(err){
 			res.status(500).message(getErrorObj(err));
@@ -162,6 +165,44 @@ router.post('/current/logout', function(req, res) {
 		return;
 	});
 	
+});
+
+router.post('/current/changePassword', function(req, res) {
+
+	console.log(req.user);
+
+	var oldPasswordHash = req.body.oldPasswordHash;
+	var newPasswordHash = req.body.newPasswordHash;
+
+	if(typeof oldPasswordHash != 'string' || typeof newPasswordHash != 'string')
+	{
+		res.status(400).send({
+			message: "Invalid old or new password hash"
+		});
+		return;
+	}
+
+	if(oldPasswordHash != req.user.passwordHash)
+	{
+		res.status(403).send({
+			message: "Old password does not match"
+		});
+		return;
+	}
+
+	req.user.passwordHash = newPasswordHash;
+
+	req.user.save(function( err ) {
+		if(err)
+			res.status(500).send({
+				message: getErrorObj(err)
+			});
+		else
+			res.send({
+				message: "Password Changed."
+			});
+	});
+
 });
 
 /* GET a user. */
@@ -229,7 +270,7 @@ router.put('/:id', function(req, res){
 
 		_.extend(user, fields);
 
-		user.save(function( err, resultUser, numberAffected) {
+		user.save(function( err, resultUser) {
 
 			if(err)
 			{
@@ -556,6 +597,7 @@ router.post('/authenticate', function (req, res) {
 		res.status(403).send({
 			message: "Authentication failed"
 		});
+		return;
 	}
 
 	User.findOne({email: email}).populate('locations').exec(function(err, aUser) {
