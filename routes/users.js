@@ -103,7 +103,7 @@ router.get('/', function(req, res) {
 	var limit = req.query['limit'] || 20;
 	var offset = req.query['offset'] || 0;
 
-	User.find({ }, null, { skip: offset, limit: limit }, function (err, users) {
+	User.find({ }, null, { skip: offset, limit: limit }).populate('locations').exec(function (err, users) {
 		if(err)
 		{
 			console.log(err);

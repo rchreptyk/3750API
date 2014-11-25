@@ -43,6 +43,41 @@ function populateEvent(event) {
 	});
 }
 
+router.get('/', function(req, res) {
+	var limit = req.query['limit'] || 20;
+	var offset = req.query['offset'] || 0;
+	var status = req.query['status'];
+
+	Event.find({ status: status }, null, { skip: offset, limit: limit }, function (err, events) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		populations = _.map(events, function(event) {
+			return populateEvent(event);
+		});
+
+		Q.all(populations).then(function(events) {
+
+			events = _.map(events, function(event) {
+				console.log(event);
+				return getPublicEvent(event);
+			});
+
+			res.send({
+				events: events
+			});
+
+		}).catch(function(err) {
+			res.status(400).send(getErrorObj(err));
+		});
+
+	});
+});
+
 router.post('/', function(req, res) {
 
 	if(!req.body.event)

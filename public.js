@@ -63,6 +63,10 @@ module.exports.getPublicEvent = function(event) {
 }
 
 function getPublicUser(user) {
+
+	if(!user)
+		return user;
+
 	user.id = user._id;
 	var publicUser = _.pick(user, allowedUserEntries);
 	
@@ -73,6 +77,10 @@ function getPublicUser(user) {
 module.exports.getPublicUser = getPublicUser;
 
 function getPublicLocation(location) {
+
+	if(!location)
+		return location;
+
 	location.id = location._id;
 	location = _.pick(location, allowedLocationEntries);
 
@@ -80,6 +88,10 @@ function getPublicLocation(location) {
 }
 
 function getPublicLocations(locations) {
+
+	if(!locations)
+		return locations;
+
 	locations = _.map(locations, getPublicLocation);
 	return locations;
 }
