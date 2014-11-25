@@ -40,8 +40,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(auth.authenticator);
 
-app.use('/users', users);
-app.use('/events', events);
+app.use(/^\/users?$/, users);
+app.use(/^\/events?$/, events);
 app.use('/feedback', feedback);
 
 // catch 404 and forward to error handler
