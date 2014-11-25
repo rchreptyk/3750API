@@ -228,4 +228,37 @@ router.put('/:id', function(req, res) {
 	});
 });
 
+router.delete('/:id', function(req, res) {
+	var id = req.params['id'];
+
+	Event.findById(id, function (err, event) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!event) {
+			res.status(404).send({
+				message: "No event with that id found"
+			});
+			return;
+		}
+
+		event.remove(function(err) {
+			if(err)
+			{
+				res.status(500).send(getErrorObj(err));
+			}
+			else
+			{
+				res.send({
+					message:'Event Deleted'
+				});
+			}
+		});
+	});
+});
+
 module.exports = router;
