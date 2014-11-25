@@ -140,8 +140,6 @@ router.get('/', function(req, res) {
 
 router.get('/current', function(req, res) {
 
-	console.log(req.user);
-
 	User.populate(req.user, 'locations', function(err, populated) {
 		if(err){
 			res.status(500).message(getErrorObj(err));
@@ -168,8 +166,6 @@ router.post('/current/logout', function(req, res) {
 });
 
 router.post('/current/changePassword', function(req, res) {
-
-	console.log(req.user);
 
 	var oldPasswordHash = req.body.oldPasswordHash;
 	var newPasswordHash = req.body.newPasswordHash;

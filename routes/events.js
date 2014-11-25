@@ -261,4 +261,54 @@ router.delete('/:id', function(req, res) {
 	});
 });
 
+router.post('/:id/:verb', function(req, res){
+	var id = req.params['id'];
+
+	Event.findById(id, function (err, event) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!event) {
+			res.status(404).send({
+				message: "No event with that id found"
+			});
+			return;
+		}
+
+		var verb = req.params['verb'];
+		if(!/^attend|noattend|cancel|accept|reject$/.test(verb))
+		{
+			res.status(404).send({
+				message: "Invalid verb"
+			});
+			return;
+		}
+
+		if(verb == 'attend') {
+			event.attendees.addToSet(req.user._id);
+		} else if(verb == 'noattend') {
+			event.attendees = _.without(event.attendees, req.user._id);
+		} else if(verb == 'cancel') {
+			event.status = 'canceled'
+		} else if(verb == 'accept') {
+			event.status = 'approved'
+		} else if(verb == 'reject') {
+			event.status = 'rejected'
+		}
+
+		event.save(function(err) {
+			if(err)
+				res.status(500).send(getErrorObj(err));
+			else
+				res.send({
+					message: "success"
+				});
+		});
+	});
+});
+
 module.exports = router;
