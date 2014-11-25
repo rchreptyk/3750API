@@ -26,6 +26,9 @@ var userSchema = new Schema({
 userSchema.path('roles').validate(function(value) {
 	valid = true;
 
+	if(!value)
+		return false;
+
 	value.forEach(function(entry) {
 		if(!/normal|staff/i.test(value))
 			valid = false;
