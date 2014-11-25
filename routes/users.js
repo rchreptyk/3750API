@@ -495,4 +495,72 @@ router.put('/:userid/locations/:locationid', function (req, res) {
 	});
 });
 
+router.delete('/:userid/locations/:locationid', function (req, res) {
+	var userid = req.params['userid'];
+	var locationid = req.params['locationid'];
+
+	User
+	.findById(userid)
+	.populate('locations')
+	.exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		var locationToRemove = null;
+
+		for(var i =0; i < user.locations.length; i++)
+		{
+			if(user.locations[i]._id == locationid)
+			{
+				locationToRemove = user.locations[i];
+				user.locations.splice(i, 1);
+				break;
+			}
+		}
+
+		if(locationToRemove == null)
+		{
+			res.status(404).send({
+				message: "Could not find location with the given id"
+			});
+			return;
+		}
+
+		user.save(function(err) {
+			if(err)
+			{
+				res.status(500).send(getErrorObj(err));
+				return;
+			}
+
+			locationToRemove.remove(function(err) {
+				if(err)
+				{
+					res.status(500).send(getErrorObj(err));
+				}
+				else
+				{
+					res.send({
+						message: "Location deleted"
+					});
+				}
+			});
+		});
+
+	});
+});
+
+
+
 module.exports = router;
