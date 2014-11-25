@@ -22,7 +22,10 @@ Settings.findById(settingsKey, function(err, settings) {
 	{
 		settings = new Settings();
 		settings.save(function(err) {
-			console.log(err);
+			if(err)
+				console.log(err);
+			else
+				console.log("Next key now set. DB now setup and should be blank")
 			return;
 		});
 	}

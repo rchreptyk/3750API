@@ -11,7 +11,7 @@ var userSchema = new Schema({
 	_id: {type: Number},
 	firstname: {type: String, required: true},
 	lastname: {type: String, required: true},
-	email: {type: String, required: true },
+	email: {type: String, required: true, index: { unique: true }},
 	roles: {type: [String], default: ["Normal"] },
 	passwordHash: { type: String, required: true },
 	phone: Number,

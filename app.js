@@ -9,6 +9,8 @@ var users = require('./routes/users');
 var events = require('./routes/events');
 var feedback = require('./routes/feedback');
 
+var auth = require('./db/auth');
+
 var app = express();
 
 // view engine setup
@@ -22,6 +24,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(auth.authenticator);
 
 app.use('/users', users);
 app.use('/events', events);

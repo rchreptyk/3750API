@@ -7,6 +7,8 @@ var Q = require('q');
 var User = require('../db/user');
 var Location = require('../db/location');
 
+var auth = require('../db/auth');
+
 var getErrorObj = require('../errors').getErrorObj;
 
 var pub = require('../public');
@@ -42,7 +44,7 @@ function saveLocation(user, locationData) {
 
 /* POST new user */
 router.post('/', function(req, res) {
-	var user = new User();
+	var userObj = new User();
 	var userData = req.body.user;
 
 	if(!userData)
@@ -51,28 +53,43 @@ router.post('/', function(req, res) {
 		return;
 	}
 
-	user.firstname = userData.firstname;
-	user.lastname = userData.lastname;
-	user.email = userData.email;
-	user.roles = userData.roles;
-	user.phone = userData.phone;
-	user.passwordHash = userData.passwordHash;
-	user.userNotes = userData.userNotes;
-	user.company = userData.company;
-	user.emailEnabled = userData.emailEnabled;
-	user.emailVerified = userData.emailVerified;
+	userObj.firstname = userData.firstname;
+	userObj.lastname = userData.lastname;
+	userObj.email = userData.email;
+	userObj.roles = userData.roles;
+	userObj.phone = userData.phone;
+	userObj.passwordHash = userData.passwordHash;
+	userObj.userNotes = userData.userNotes;
+	userObj.company = userData.company;
+	userObj.emailEnabled = userData.emailEnabled;
+	userObj.emailVerified = userData.emailVerified;
 
-	var locationSaves = [];
+	var checks = [];
+
+	var uniqueEmail = Q.Promise(function(resolve, reject) {
+		User.where({ email: userObj.email }).count(function(err, count) {
+			if(err)
+				reject();
+			else if(count != 0)
+				reject({
+					message: 'A user already exists with that email'
+				});
+			else
+				resolve();
+		});
+	});
+
+	checks.push(uniqueEmail);
 
 	if(userData.locations)
 	{
 		userData.locations.forEach(function(locationData) {
-			locationSaves.push(saveLocation(user, locationData));
+			checks.push(saveLocation(userObj, locationData));
 		});
 	}
 
-	Q.all(locationSaves).then(function(locations) {
-		user.save(function (err, product) {
+	Q.all(checks).then(function(locations) {
+		userObj.save(function (err, product) {
 			if(err)
 			{
 				console.log(err);
@@ -454,14 +471,12 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 	.findById(userid)
 	.populate('locations')
 	.exec(function(err, user) {
-		if(err)
-		{
+		if(err) {
 			res.status(400).send(getErrorObj(err));
 			return;
 		}
 
-		if(!user)
-		{
+		if(!user) {
 			res.status(404).send({
 				message: "Could not find user with the given id"
 			});
@@ -470,10 +485,8 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 
 		var locationToRemove = null;
 
-		for(var i =0; i < user.locations.length; i++)
-		{
-			if(user.locations[i]._id == locationid)
-			{
+		for(var i =0; i < user.locations.length; i++) {
+			if(user.locations[i]._id == locationid) {
 				locationToRemove = user.locations[i];
 				user.locations.splice(i, 1);
 				break;
@@ -489,19 +502,15 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 		}
 
 		user.save(function(err) {
-			if(err)
-			{
+			if(err) {
 				res.status(500).send(getErrorObj(err));
 				return;
 			}
 
 			locationToRemove.remove(function(err) {
-				if(err)
-				{
+				if(err) {
 					res.status(500).send(getErrorObj(err));
-				}
-				else
-				{
+				} else {
 					res.send({
 						message: "Location deleted"
 					});
@@ -509,6 +518,48 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 			});
 		});
 
+	});
+});
+
+router.post('/authenticate', function (req, res) {
+	var email = req.body.email;
+	var passwordHash = req.body.passwordHash;
+
+	if(typeof email != 'string' || typeof passwordHash != 'string')
+	{
+		res.status(403).send({
+			message: "Authentication failed"
+		});
+	}
+
+	User.findOne({email: email}).populate('locations').exec(function(err, aUser) {
+		if(err){
+			res.status(500).message(getErrorObj(err));
+			return;
+		}
+
+		if(!aUser) {
+			res.status(403).send({
+				message: "Authentication failed"
+			});
+			return;
+		}
+
+		if(aUser.passwordHash != passwordHash) {
+			res.status(403).send({
+				message: "Authentication failed"
+			});
+			return;
+		}
+
+		auth.generateToken(aUser).then(function(token) {
+			res.send({
+				token: token,
+				user: getPublicUser(aUser)
+			});
+		}).fail(function(err){
+			res.status(500).message(getErrorObj(err));
+		})
 	});
 });
 
