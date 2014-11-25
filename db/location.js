@@ -1,6 +1,8 @@
 var settings = require('../db/settings');
 var db = require('../db/db');
 
+var Q = require('q');
+
 var Schema = db.Schema;
 
 var locationSchema = new Schema({
@@ -33,5 +35,28 @@ locationSchema.pre('save', function(next) {
 });
 
 var Location = db.model('Location', locationSchema);
+Location.exists = function(id) {
+	
+	var deferred = Q.defer();
+
+	Location.findById(id, function(err, obj) {
+		if(err)
+		{
+			deferred.reject(err)
+			return;
+		}
+
+		if(!obj)
+		{
+			deferred.reject({
+				message: "Location of id " + id + " does not exist"
+			});
+		}
+
+		deferred.resolve();
+	});
+
+	return deferred.promise;
+};
 
 module.exports = Location;

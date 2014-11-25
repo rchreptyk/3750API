@@ -1,6 +1,8 @@
 var settings = require('../db/settings');
 var db = require('../db/db');
 
+var Q = require('q');
+
 var Location = require('../db/location')
 
 var Schema = db.Schema;
@@ -11,7 +13,7 @@ var userSchema = new Schema({
 	lastname: {type: String, required: true},
 	email: {type: String, required: true },
 	roles: {type: [String], default: ["Normal"] },
-	passwordHash: String,
+	passwordHash: { type: String, required: true },
 	phone: Number,
 	locations: [ { type: Number, ref: 'Location' }],
 	userNotes: { type: String, default: ""},
@@ -56,5 +58,28 @@ userSchema.pre('save', function(next) {
 });
 
 var User = db.model('User', userSchema);
+User.exists = function(id) {
+	
+	var deferred = Q.defer();
+
+	User.findById(id, function(err, obj) {
+		if(err)
+		{
+			deferred.reject(err)
+			return;
+		}
+
+		if(!obj)
+		{
+			deferred.reject({
+				message: "User of id " + id + " does not exist"
+			});
+		}
+
+		deferred.resolve();
+	});
+
+	return deferred.promise;
+};
 
 module.exports = User;

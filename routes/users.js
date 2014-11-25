@@ -1,66 +1,17 @@
 var express = require('express');
 var router = express.Router();
-var User = require('../db/user');
-var Location = require('../db/location');
+
 var _ = require('underscore');
-var objectID = require('../db/db').Types.ObjectId;
 var Q = require('q');
 
-var allowedLocationEntries = [
-	"id",
-	"description",
-	"address1",
-	"address2",
-	"city",
-	"postal",
-	"country",
-	"longitude",
-	"latitude"
-];
+var User = require('../db/user');
+var Location = require('../db/location');
 
-var allowedEntries = [
-	'id', 
-	'firstname', 
-	'lastname', 
-	'email',
-	'roles',
-	'phone',
-	'locations',
-	'userNotes',
-	'company',
-	'created',
-	'emailEnabled',
-	'emailVerified'
-];
+var getErrorObj = require('../errors').getErrorObj;
 
-function getPublicUser(user) {
-	user.id = user._id;
-	var publicUser = _.pick(user, allowedEntries);
-	
-	publicUser.locations = getPublicLocations(publicUser.locations);
-
-	return publicUser;
-}
-
-function getPublicLocations(locations) {
-
-
-	locations = _.map(locations, function(location) {
-		location.id = location._id;
-		location = _.pick(location, allowedLocationEntries);
-
-		return location;
-	});
-
-	return locations;
-}
-
-function getErrorObj(err) {
-	return {
-		message: err.message,
-		errors: _.pluck(err.errors, 'message')
-	}
-}
+var pub = require('../public');
+var getPublicUser = pub.getPublicUser;
+var getPublicLocations = pub.getPublicLocations;
 
 function saveLocation(user, locationData) {
 	var deferred = Q.defer();
@@ -343,7 +294,7 @@ router.post('/:userid/locations', function (req, res) {
 		locSave = saveLocation(user, req.body.location);
 
 		locSave.then(function (location) {
-			user.save(function( err, resultUser, numberAffected) {
+			user.save(function( err, resultUser ) {
 
 				if(err)
 				{
@@ -560,7 +511,5 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 
 	});
 });
-
-
 
 module.exports = router;
