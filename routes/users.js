@@ -23,6 +23,15 @@ function getPublicUser(user) {
 		'emailVerified'
 	];
 
+	user.id = user._id;
+	var publicUser = _.pick(user, allowedEntries);
+	
+	publicUser.locations = getPublicLocations(publicUser.locations);
+
+	return publicUser;
+}
+
+function getPublicLocations(locations) {
 	var allowedLocationEntries = [
 		"id",
 		"description",
@@ -35,17 +44,14 @@ function getPublicUser(user) {
 		"latitude"
 	];
 
-	user.id = user._id;
-	var publicUser = _.pick(user, allowedEntries);
-	
-	publicUser.locations = _.map(publicUser.locations, function(location) {
+	locations = _.map(locations, function(location) {
 		location.id = location._id;
 		location = _.pick(location, allowedLocationEntries);
 
 		return location;
 	});
 
-	return publicUser;
+	return locations;
 }
 
 function getErrorObj(err) {
@@ -224,7 +230,7 @@ router.put('/:id', function(req, res){
 
 	var fields = _.pick(req.body.user, updateable);
 
-	User.findById(id, function(err, user) {
+	User.findById(id).populate('locations').exec(function(err, user) {
 		if(err)
 		{
 			res.status(400).send(getErrorObj(err));
@@ -249,17 +255,8 @@ router.put('/:id', function(req, res){
 				return;
 			}
 
-			User.populate(resultUser, { path: 'locations' }, function(err, populatedUser) {
-
-				if(err)
-				{
-					res.status(400).send(getErrorObj(err));
-					return;
-				}
-
-				res.send({
-					users: [getPublicUser(populatedUser)]
-				});
+			res.send({
+				users: [getPublicUser(user)]
 			});
 
 		});
@@ -299,6 +296,33 @@ router.delete('/:id', function(req, res) {
 			}
 		});
 	});
+});
+
+router.get('/:userid/locations', function (req, res) {
+
+	var userid = req.params['userid'];
+
+	User.findById(userid).populate('locations').exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		res.send({
+			locations: getPublicLocations(user.locations)
+		});
+
+	});
+
 });
 
 module.exports = router;
