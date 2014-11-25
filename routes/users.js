@@ -6,23 +6,34 @@ var _ = require('underscore');
 var objectID = require('../db/db').Types.ObjectId;
 var Q = require('q');
 
-function getPublicUser(user) {
-	
-	var allowedEntries = [
-		'id', 
-		'firstname', 
-		'lastname', 
-		'email',
-		'roles',
-		'phone',
-		'locations',
-		'userNotes',
-		'company',
-		'created',
-		'emailEnabled',
-		'emailVerified'
-	];
+var allowedLocationEntries = [
+	"id",
+	"description",
+	"address1",
+	"address2",
+	"city",
+	"postal",
+	"country",
+	"longitude",
+	"latitude"
+];
 
+var allowedEntries = [
+	'id', 
+	'firstname', 
+	'lastname', 
+	'email',
+	'roles',
+	'phone',
+	'locations',
+	'userNotes',
+	'company',
+	'created',
+	'emailEnabled',
+	'emailVerified'
+];
+
+function getPublicUser(user) {
 	user.id = user._id;
 	var publicUser = _.pick(user, allowedEntries);
 	
@@ -32,17 +43,7 @@ function getPublicUser(user) {
 }
 
 function getPublicLocations(locations) {
-	var allowedLocationEntries = [
-		"id",
-		"description",
-		"address1",
-		"address2",
-		"city",
-		"postal",
-		"country",
-		"longitude",
-		"latitude"
-	];
+
 
 	locations = _.map(locations, function(location) {
 		location.id = location._id;
@@ -427,6 +428,69 @@ router.get('/:userid/locations/:locationid', function (req, res) {
 
 		res.send({
 			locations: getPublicLocations(user.locations)
+		});
+	});
+});
+
+router.put('/:userid/locations/:locationid', function (req, res) {
+	var userid = req.params['userid'];
+	var locationid = req.params['locationid'];
+
+	var entries = _.without(allowedLocationEntries, 'id');
+
+	if(!req.body.location)
+	{
+		res.status(400).send({
+			message: "No location was sent"
+		});
+		return;
+	}
+
+	User
+	.findById(userid)
+	.populate({
+		path: 'locations', 
+		match: { _id: locationid }}
+	)
+	.exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		if(user.locations.length != 1)
+		{
+			res.status(404).send({
+				message: "Could not find location with the given id"
+			});
+			return;
+		}
+
+		var location = user.locations[0];
+
+		var locationData = _.pick(req.body.location, entries);
+
+		_.extend(location, locationData);
+
+		location.save(function (err, product) {
+			if(err)
+			{
+				res.status(400).send(getErrorObj(err));
+				return;
+			}
+
+			res.send({
+				locations: getPublicLocations([product])
+			});
 		});
 	});
 });
