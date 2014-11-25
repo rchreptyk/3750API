@@ -365,4 +365,70 @@ router.post('/:userid/locations', function (req, res) {
 
 });
 
+router.get('/:userid/locations', function (req, res) {
+
+	var userid = req.params['userid'];
+
+	User.findById(userid).populate('locations').exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		res.send({
+			locations: getPublicLocations(user.locations)
+		});
+
+	});
+
+});
+
+router.get('/:userid/locations/:locationid', function (req, res) {
+	var userid = req.params['userid'];
+	var locationid = req.params['locationid'];
+
+	User
+	.findById(userid)
+	.populate({
+		path: 'locations', 
+		match: { _id: locationid }}
+	)
+	.exec(function(err, user) {
+		if(err)
+		{
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!user)
+		{
+			res.status(404).send({
+				message: "Could not find user with the given id"
+			});
+			return;
+		}
+
+		if(user.locations.length != 1)
+		{
+			res.status(404).send({
+				message: "Could not find location with the given id"
+			});
+			return;
+		}
+
+		res.send({
+			locations: getPublicLocations(user.locations)
+		});
+	});
+});
+
 module.exports = router;
