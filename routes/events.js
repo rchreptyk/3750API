@@ -43,6 +43,46 @@ function populateEvent(event) {
 	});
 }
 
+function validateAndSaveEvent(event) {
+	valid = Q.Promise(function(resolve, reject){
+		event.validate(function(err) {
+			if(err)
+				reject(err);
+			else
+				resolve();
+		})
+	});
+
+	return valid.then(function() {
+		return Location.exists(event.location)
+	})
+	.then(function() {
+		return User.exists(event.owner)
+	})
+	.then(function(){
+		return Q.all(_.map(event.attendees, function(attendee) {
+			return User.exists(attendee);
+		}));
+	})
+	.then(function(){
+		return Q.Promise(function(resolve, reject) {
+			event.save(function( err, resultEvent ) {
+				if(err)
+				{
+					reject(err);
+				}
+				else
+				{
+					resolve(resultEvent);
+				}
+			});
+		});
+	})
+	.then(function(event) {
+		return populateEvent(event);
+	});
+}
+
 router.get('/', function(req, res) {
 	var limit = req.query['limit'] || 20;
 	var offset = req.query['offset'] || 0;
@@ -99,44 +139,8 @@ router.post('/', function(req, res) {
 	event.attendees = _.pluck(eventdata.attendees, 'id');
 	event.staffNotes = eventdata.staffNotes;
 
-	valid = Q.Promise(function(resolve, reject){
-		event.validate(function(err) {
-			if(err)
-				reject(err);
-			else
-				resolve();
-		})
-	});
-
-	valid.then(function() {
-		return Location.exists(event.location)
-	})
-	.then(function() {
-		return User.exists(event.owner)
-	})
-	.then(function(){
-		return Q.all(_.map(event.attendees, function(attendee) {
-			return User.exists(attendee);
-		}));
-	})
-	.then(function(){
-		return Q.Promise(function(resolve, reject) {
-			event.save(function( err, resultEvent ) {
-				if(err)
-				{
-					reject(err);
-				}
-				else
-				{
-					resolve(resultEvent);
-				}
-			});
-		});
-	})
-	.then(function(event) {
-		return populateEvent(event);
-	})
-	.then(function (event) {
+	
+	validateAndSaveEvent(event).then(function (event) {
 		res.status(201).send({
 			events: [getPublicEvent(event)]
 		});
@@ -144,6 +148,83 @@ router.post('/', function(req, res) {
 	.catch(function(err){
 		console.log(err);
 		res.status(400).send(getErrorObj(err));
+	});
+});
+
+router.get('/:id', function(req, res) {
+
+	var id = req.params['id'];
+
+	Event.findById(id, function (err, event) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!event) {
+			res.status(404).send({
+				message: "No event with that id found"
+			});
+			return;
+		}
+
+		populateEvent(event).then(function(eventObj) {
+			res.send({
+				events: [getPublicEvent(eventObj)]
+			});
+		}).catch(function(err) {
+			res.status(400).send(getErrorObj(err));
+		});
+
+	});
+});
+
+router.put('/:id', function(req, res) {
+	var id = req.params['id'];
+
+	var updateable = [
+		'description',
+		'endtime',
+		'staffNotes',
+		'trees'
+	];
+
+	Event.findById(id, function (err, event) {
+		if(err)
+		{
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+			return;
+		}
+
+		if(!event) {
+			res.status(404).send({
+				message: "No event with that id found"
+			});
+			return;
+		}
+
+		var fields = _.pick(req.body.event, updateable);
+
+		_.extend(event, fields);
+
+		if(req.body.event.attendees)
+		{
+			event.attendees = _.pluck(req.body.event.attendees, 'id');
+		}
+
+		validateAndSaveEvent(event).then(function (event) {
+			res.status(201).send({
+				events: [getPublicEvent(event)]
+			});
+		})
+		.catch(function(err){
+			console.log(err);
+			res.status(400).send(getErrorObj(err));
+		});
+
 	});
 });
 
