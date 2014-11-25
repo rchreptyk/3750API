@@ -44,6 +44,20 @@ function generateToken(user) {
 
 module.exports.generateToken = generateToken;
 
+function deauthenticate(req) {
+	var token = getTokenFromHeader(req);
+	return Q.Promise(function (resolve, reject) {
+		Token.findOneAndRemove({token: token}).exec(function(err) {
+			if(err)
+				reject(err);
+			else
+				resolve();
+		});
+	});
+}
+
+module.exports.deauthenticate = deauthenticate;
+
 function getUser(token) {
 	return Q.Promise(function (resolve, reject) {
 		Token.findOne({token: token}).populate('user').exec(function(err, tk) {
@@ -68,6 +82,13 @@ function isWhiteListed(req) {
 	return false;
 }
 
+function getTokenFromHeader(req) {
+	var header = req.headers['authorization'];
+	return header.split(/\s+/).pop().split('=').pop();
+}
+
+
+
 module.exports.authenticator = function(req, res, next) {
 	if(isWhiteListed(req))
 	{
@@ -83,8 +104,7 @@ module.exports.authenticator = function(req, res, next) {
 		return;
 	}
 
-	var header = req.headers['authorization'];
-	var token = header.split(/\s+/).pop().split('=').pop();
+	var token = getTokenFromHeader(req);
 
 	getUser(token).then(function(user) {
 		req.user = user;

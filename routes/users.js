@@ -138,6 +138,32 @@ router.get('/', function(req, res) {
 	});
 });
 
+router.get('/current', function(req, res) {
+	User.populate(req.user, 'locations', function(err, populated) {
+		if(err){
+			res.status(500).message(getErrorObj(err));
+			return;
+		}
+
+		res.send({
+			user: getPublicUser(populated)
+		})
+	});
+	
+});
+
+router.post('/current/logout', function(req, res) {
+	auth.deauthenticate(req).then(function() {
+		res.send({
+			message: "User logged out"
+		})
+	}).fail(function(err) {
+		res.status(500).send(getErrorObj(err));
+		return;
+	});
+	
+});
+
 /* GET a user. */
 router.get('/:id', function(req, res) {
 	var id = req.params['id'];
