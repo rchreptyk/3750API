@@ -88,7 +88,24 @@ router.get('/', function(req, res) {
 	var offset = req.query['offset'] || 0;
 	var status = req.query['status'];
 
-	Event.find({ status: status }, null, { skip: offset, limit: limit }, function (err, events) {
+	var query = {  };
+
+	if(!_.contains(req.user.roles, "staff"))
+	{
+		query = {
+			$or: [
+				{ status: 'approved' },
+				{ owner:  req.user._id}
+			]
+		}
+	}
+	else
+	{
+		if(status)
+			query.status = status;
+	}
+
+	Event.find(query, null, { skip: offset, limit: limit }, function (err, events) {
 		if(err)
 		{
 			console.log(err);
@@ -103,7 +120,6 @@ router.get('/', function(req, res) {
 		Q.all(populations).then(function(events) {
 
 			events = _.map(events, function(event) {
-				console.log(event);
 				return getPublicEvent(event);
 			});
 
