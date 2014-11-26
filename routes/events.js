@@ -95,7 +95,7 @@ router.get('/', function(req, res) {
 		query = {
 			$or: [
 				{ status: 'approved' },
-				{ owner:  req.user._id}
+				{ owner:  req.user._id }
 			]
 		}
 	}
@@ -103,6 +103,8 @@ router.get('/', function(req, res) {
 	{
 		if(status)
 			query.status = status;
+		else
+			query.status = { $ne: 'canceled' };
 	}
 
 	Event.find(query, null, { skip: offset, limit: limit }, function (err, events) {
