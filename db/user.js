@@ -1,3 +1,7 @@
+/*
+Module specification for a user.
+*/
+
 var settings = require('../db/settings');
 var db = require('../db/db');
 
@@ -61,6 +65,8 @@ userSchema.pre('save', function(next) {
 });
 
 var User = db.model('User', userSchema);
+
+/* Add an exists method to the user model */
 User.exists = function(id) {
 	
 	var deferred = Q.defer();

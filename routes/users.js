@@ -1,3 +1,7 @@
+/* 
+Methods that handle user requests 
+*/
+
 var express = require('express');
 var router = express.Router();
 
@@ -15,6 +19,7 @@ var pub = require('../public');
 var getPublicUser = pub.getPublicUser;
 var getPublicLocations = pub.getPublicLocations;
 
+/* Save a location and associate with a user */
 function saveLocation(user, locationData) {
 	var deferred = Q.defer();
 
@@ -138,6 +143,7 @@ router.get('/', function(req, res) {
 	});
 });
 
+/* Get the current logged in user info */
 router.get('/current', function(req, res) {
 
 	User.populate(req.user, 'locations', function(err, populated) {
@@ -153,6 +159,7 @@ router.get('/current', function(req, res) {
 	
 });
 
+/* Logout - Kill the token for a user */
 router.post('/current/logout', function(req, res) {
 	auth.deauthenticate(req).then(function() {
 		res.send({
@@ -165,6 +172,7 @@ router.post('/current/logout', function(req, res) {
 	
 });
 
+/* Change the password for a user */
 router.post('/current/changePassword', function(req, res) {
 
 	var oldPasswordHash = req.body.oldPasswordHash;
@@ -228,6 +236,7 @@ router.get('/:id', function(req, res) {
 	});
 });
 
+/* Update a user info */
 router.put('/:id', function(req, res){
 	var id = req.params['id'];
 
@@ -283,6 +292,7 @@ router.put('/:id', function(req, res){
 	});
 });
 
+/* Delete a user */
 router.delete('/:id', function(req, res) {
 	var id = req.params['id'];
 
@@ -317,6 +327,7 @@ router.delete('/:id', function(req, res) {
 	});
 });
 
+/* Get the locations associated with a given user */
 router.get('/:userid/locations', function (req, res) {
 
 	var userid = req.params['userid'];
@@ -344,6 +355,7 @@ router.get('/:userid/locations', function (req, res) {
 
 });
 
+/* Add a new location to the user */
 router.post('/:userid/locations', function (req, res) {
 
 	var userid = req.params['userid'];
@@ -397,6 +409,7 @@ router.post('/:userid/locations', function (req, res) {
 
 });
 
+/* Get a list of locations for a user */
 router.get('/:userid/locations', function (req, res) {
 
 	var userid = req.params['userid'];
@@ -424,6 +437,7 @@ router.get('/:userid/locations', function (req, res) {
 
 });
 
+/* Get a specific user location */
 router.get('/:userid/locations/:locationid', function (req, res) {
 	var userid = req.params['userid'];
 	var locationid = req.params['locationid'];
@@ -463,6 +477,7 @@ router.get('/:userid/locations/:locationid', function (req, res) {
 	});
 });
 
+/* Update a locations information */
 router.put('/:userid/locations/:locationid', function (req, res) {
 	var userid = req.params['userid'];
 	var locationid = req.params['locationid'];
@@ -526,6 +541,7 @@ router.put('/:userid/locations/:locationid', function (req, res) {
 	});
 });
 
+/* Delete a location */
 router.delete('/:userid/locations/:locationid', function (req, res) {
 	var userid = req.params['userid'];
 	var locationid = req.params['locationid'];
@@ -584,6 +600,7 @@ router.delete('/:userid/locations/:locationid', function (req, res) {
 	});
 });
 
+/* Authenticate a user, returning a session token */
 router.post('/authenticate', function (req, res) {
 	var email = req.body.email;
 	var passwordHash = req.body.passwordHash;
