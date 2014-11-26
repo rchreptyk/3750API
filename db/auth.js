@@ -1,3 +1,10 @@
+/**
+
+Define the module for authentication in the API
+
+*/
+
+
 var settings = require('../db/settings');
 var db = require('../db/db');
 
@@ -15,6 +22,7 @@ var tokenSchema = new Schema({
 
 var Token = db.model('Token', tokenSchema);
 
+/* Get a new random token */
 function getToken() {
 	return Q.Promise(function(resolve) {
 		require('crypto').randomBytes(48, function(ex, buf) {
@@ -23,6 +31,7 @@ function getToken() {
 	})
 }
 
+/* Generate a new token for a user */
 function generateToken(user) {
 	return getToken().then(function (token) {
 		return Q.Promise(function (resolve, reject) {
@@ -44,6 +53,7 @@ function generateToken(user) {
 
 module.exports.generateToken = generateToken;
 
+/* Delete a users auth token */
 function deauthenticate(req) {
 	var token = getTokenFromHeader(req);
 	return Q.Promise(function (resolve, reject) {
@@ -58,6 +68,7 @@ function deauthenticate(req) {
 
 module.exports.deauthenticate = deauthenticate;
 
+/* Get the user associated with a token */
 function getUser(token) {
 	return Q.Promise(function (resolve, reject) {
 		Token.findOne({token: token}).populate('user').exec(function(err, tk) {
@@ -69,6 +80,7 @@ function getUser(token) {
 	});
 }
 
+/* Is the req a whitelisted with no auth required */
 function isWhiteListed(req) {
 
 	for(var i = 0; i < whitelist.length; i++) {
@@ -82,13 +94,13 @@ function isWhiteListed(req) {
 	return false;
 }
 
+/* Get the token from the request */
 function getTokenFromHeader(req) {
 	var header = req.headers['authorization'];
 	return header.split(/\s+/).pop().split('=').pop();
 }
 
-
-
+/* Authentication middleware to ensure authentication */
 module.exports.authenticator = function(req, res, next) {
 	if(isWhiteListed(req))
 	{
