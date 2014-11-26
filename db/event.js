@@ -1,3 +1,6 @@
+/*
+The mongoose model for events
+*/
 var settings = require('../db/settings');
 var db = require('../db/db');
 

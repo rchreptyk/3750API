@@ -1,6 +1,8 @@
+/* Methods for getting publicly shown version of model objects */
 
 var _ = require('underscore');
 
+/* The allowed fields for locations */
 var allowedLocationEntries = [
 	"id",
 	"description",
@@ -13,6 +15,7 @@ var allowedLocationEntries = [
 	"latitude"
 ];
 
+/* The allowed fields for users */
 var allowedUserEntries = [
 	'id', 
 	'firstname', 
@@ -28,6 +31,7 @@ var allowedUserEntries = [
 	'emailVerified'
 ];
 
+/* The allowed fields for events */
 var allowedEventEntries = [
 	'id',
 	'owner',
@@ -42,11 +46,13 @@ var allowedEventEntries = [
 	'created'
 ];
 
+/* Allowed fields for trees */
 var allowedTreeEntries = [
 	'type',
 	'quantity'
 ];
 
+/* Get a public object for an event */
 module.exports.getPublicEvent = function(event) {
 	event.id = event._id;
 
@@ -62,6 +68,7 @@ module.exports.getPublicEvent = function(event) {
 	return publicEvent;
 }
 
+/* Get a public object for a user */
 function getPublicUser(user) {
 
 	if(!user)
@@ -76,6 +83,7 @@ function getPublicUser(user) {
 }
 module.exports.getPublicUser = getPublicUser;
 
+/* Get a public object for a location */
 function getPublicLocation(location) {
 
 	if(!location)
@@ -87,6 +95,7 @@ function getPublicLocation(location) {
 	return location;
 }
 
+/* Get public objects for a list of locations */
 function getPublicLocations(locations) {
 
 	if(!locations)

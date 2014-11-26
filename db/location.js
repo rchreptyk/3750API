@@ -1,3 +1,4 @@
+/* The mongoose model for Locations */
 var settings = require('../db/settings');
 var db = require('../db/db');
 
@@ -35,6 +36,8 @@ locationSchema.pre('save', function(next) {
 });
 
 var Location = db.model('Location', locationSchema);
+
+/* Add an exists method on the Location model */
 Location.exists = function(id) {
 	
 	var deferred = Q.defer();

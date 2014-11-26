@@ -1,4 +1,6 @@
-
+/*
+A settings model for storing the next number for integer IDs in objects
+*/
 var db = require('../db/db');
 var Schema = db.Schema;
 
@@ -11,6 +13,7 @@ var settingSchema = new Schema({
 
 var Settings = db.model('Settings', settingSchema);
 
+/* If a next id does not exist, initialize the settings to a next ID of 0 */
 Settings.findById(settingsKey, function(err, settings) {
 	if(err)
 	{
