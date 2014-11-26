@@ -102,7 +102,7 @@ router.get('/', function(req, res) {
 		query = {
 			$or: [
 				{ status: 'approved' },
-				{ owner:  req.user._id }
+				{ $and: [{ owner:  req.user._id }, { $ne: 'canceled' } ] }
 			]
 		}
 	}
