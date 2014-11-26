@@ -1,3 +1,7 @@
+/*
+Methods to handle event routing
+*/
+
 var express = require('express');
 var router = express.Router();
 
@@ -12,6 +16,7 @@ var getErrorObj = require('../errors').getErrorObj;
 
 var getPublicEvent = require('../public').getPublicEvent;
 
+/* Populate an event fully with nested objects */
 function populateEvent(event) { 
 	return Q.Promise(function(resolve, reject){
 		Event.populate(event, 'owner location attendees', function(err, populated) {
@@ -43,6 +48,7 @@ function populateEvent(event) {
 	});
 }
 
+/* Validate an event, and if its valid, save */
 function validateAndSaveEvent(event) {
 	valid = Q.Promise(function(resolve, reject){
 		event.validate(function(err) {
@@ -83,6 +89,7 @@ function validateAndSaveEvent(event) {
 	});
 }
 
+/* Get a listing of events */
 router.get('/', function(req, res) {
 	var limit = req.query['limit'] || 20;
 	var offset = req.query['offset'] || 0;
@@ -136,6 +143,7 @@ router.get('/', function(req, res) {
 	});
 });
 
+/* Create a new event */
 router.post('/', function(req, res) {
 
 	if(!req.body.event)
@@ -199,6 +207,7 @@ router.get('/:id', function(req, res) {
 	});
 });
 
+/* Update an event */
 router.put('/:id', function(req, res) {
 	var id = req.params['id'];
 
@@ -246,6 +255,7 @@ router.put('/:id', function(req, res) {
 	});
 });
 
+/* Delete an event */
 router.delete('/:id', function(req, res) {
 	var id = req.params['id'];
 
@@ -279,6 +289,7 @@ router.delete('/:id', function(req, res) {
 	});
 });
 
+/* Attend, Stop Attending, Cancel, Approve or reject an event */
 router.post('/:id/:verb', function(req, res){
 	var id = req.params['id'];
 
